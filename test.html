@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>靈魂動物鑑定：幻境森林版</title>
+    <style>
+        :root {
+            --primary: #00ffcc;
+            --accent: #ff00ff;
+            --text: #ffffff;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text);
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        /* 核心背景層 */
+        .full-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: url('am.jpg') center/cover no-repeat;
+            z-index: -2;
+        }
+
+        .overlay-layer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(88, 28, 135, 0.5));
+            z-index: -1;
+            backdrop-filter: brightness(0.6) contrast(1.1);
+        }
+
+        /* 漂浮動物剪影 */
+        .floating-element {
+            position: absolute;
+            font-size: 3.5rem;
+            opacity: 0.12;
+            filter: blur(1px);
+            z-index: -1;
+            user-select: none;
+            animation: float-around 40s infinite linear;
+        }
+
+        @keyframes float-around {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(40vw, 30vh) rotate(15deg); }
+            66% { transform: translate(-20vw, 50vh) rotate(-15deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        #container {
+            width: 90%;
+            max-width: 480px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            padding: 45px 35px;
+            border-radius: 40px;
+            box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hidden { display: none; }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 18px 24px;
+            font-size: 1.1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            background: var(--primary);
+            color: #000;
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 255, 204, 0.4);
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255,255,255,0.1);
+            margin-bottom: 40px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #progress-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #7000ff, var(--primary));
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        .question-text { font-size: 1.5rem; font-weight: 600; margin-bottom: 35px; min-height: 4.5rem; display: flex; align-items: center; justify-content: center; }
+        .result-emoji { font-size: 6.5rem; margin-bottom: 15px; }
+        .result-title { font-size: 2.5rem; font-weight: 900; color: var(--primary); margin-bottom: 15px; text-shadow: 0 0 15px rgba(0,255,204,0.3); }
+        .result-desc { background: rgba(0,0,0,0.4); padding: 25px; border-radius: 25px; text-align: left; line-height: 1.8; color: #eee; border: 1px solid rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body>
+
+    <div class="full-bg"></div>
+    <div class="overlay-layer"></div>
+
+    <div class="floating-element" style="top: 15%; left: 10%;">🦌</div>
+    <div class="floating-element" style="top: 65%; left: 75%; animation-delay: -5s;">🕊️</div>
+    <div class="floating-element" style="top: 45%; left: 85%; animation-delay: -15s;">🐆</div>
+    <div class="floating-element" style="top: 80%; left: 15%; animation-delay: -10s;">🦉</div>
+
+    <div id="container">
+        <div id="home">
+            <div style="font-size: 5rem; margin-bottom: 15px;">🌕</div>
+            <h1 style="margin:0; font-size: 2.4rem;">靈魂動物鑑定</h1>
+            <p style="opacity: 0.8; margin: 20px 0 35px;">在幻境森林的深處，<br>哪隻生靈正與你的頻率共鳴？</p>
+            <button class="btn" style="background: var(--primary); color: #000; font-weight: 800; border: none;" onclick="start()">喚醒靈魂</button>
+        </div>
+
+        <div id="quiz" class="hidden">
+            <div class="progress-bar"><div id="progress-inner"></div></div>
+            <div id="question-text" class="question-text"></div>
+            <div id="options"></div>
+        </div>
+
+        <div id="result" class="hidden">
+            <div id="res-emoji" class="result-emoji"></div>
+            <div id="res-title" class="result-title"></div>
+            <div id="res-desc" class="result-desc"></div>
+            <button class="btn" onclick="location.reload()" style="margin-top: 35px; background: rgba(255,255,255,0.2);">重新召喚</button>
+        </div>
+    </div>
+
+<script>
+    const questions = [
+        { q: "當你獨自在森林迷路時，你的反應？", a: "冷靜觀察環境，尋找邏輯路標", b: "憑直覺感受哪邊才是出路", type: "T" },
+        { q: "看到群體在爭論，你通常會？", a: "加入其中，表達我的觀點", b: "在遠處默默觀察，不輕易介入", type: "E" },
+        { q: "你更喜歡哪種生活節奏？", a: "井然有序，一切按計畫進行", b: "隨遇而安，享受突如其來的驚喜", type: "J" },
+        { q: "面對新奇的科技產品，你？", a: "研究它的規格與實際用途", b: "想像它能為未來帶來什麼改變", type: "S" },
+        { q: "當朋友情緒低落時，你會先？", a: "給予實用的建議解決問題", b: "安靜陪伴並給予情感共鳴", type: "T" },
+        { q: "在派對上，哪種事讓你最開心？", a: "結識許多有趣的新面孔", b: "跟幾個老友深入交談", type: "E" },
+        { q: "你的工作空間通常是？", a: "東西都有固定的位置", b: "亂中有序，只有我懂的邏輯", type: "J" },
+        { q: "你更擅長處理？", a: "具體、實際的細節任務", b: "抽象、宏觀的創意構思", type: "S" },
+        { q: "你覺得哪種評價更貼近你？", a: "客觀理性的分析者", b: "充滿熱情的情感者", type: "T" },
+        { q: "週末下午，你更傾向？", a: "與人群互動、參加活動", b: "獨處或待在安靜的地方", type: "E" },
+        { q: "面對突發狀況，你通常？", a: "迅速啟動備案處理", b: "靈活調整心情去適應", type: "J" },
+        { q: "你對世界的看法是？", a: "它是由事實與規則組成的", b: "它是由各種可能性與連結組成的", type: "S" }
+    ];
+
+    const animalResults = [
+        { title: "孤傲的雪豹", emoji: "🐆", code: "INT", desc: "你是極致的理性主義者。優雅、獨立，擁有穿透迷霧的洞察力。你享受孤獨，因為那是你靈魂最有力量的時刻。" },
+        { title: "社交型虎鯨", emoji: "🐋", code: "ENT", desc: "你是群體中的戰略首腦。極具魅力且聰明絕頂。你享受社交，但本質上你是在優雅地掌控全局。" },
+        { title: "夢幻的獨角獸", emoji: "🦄", code: "INF", desc: "你是天生的理想主義者。情感深邃，對美感有近乎偏執的追求。你的存在本身就是對這世界的一種治癒。" },
+        { title: "熱情的赤狐", emoji: "🦊", code: "ENF", desc: "你是自由的靈魂。好奇心極強，總是能在枯燥的生活中找到樂趣。大家都不自覺地被你的靈動所吸引。" },
+        { title: "佛系的樹懶", emoji: "🦥", code: "ISF", desc: "你是宇宙級的穩定器。天大的事在你眼裡都不如一場好覺。你擁有一種看透世俗的鬆弛感，是大家的避風港。" },
+        { title: "優雅的天鵝", emoji: "🦢", code: "ISJ", desc: "你是秩序的守護者。外表冷靜優雅，內心卻對細節有著極高的堅持。你是所有人心中最值得信賴的後盾。" },
+        { title: "勇敢的灰狼", emoji: "🐺", code: "ESJ", desc: "你是天生的領袖。極具行動力，重視榮譽與團隊。你從不退縮，困難在你面前只有被擊碎的分。" },
+        { title: "好奇的小熊貓", emoji: "🐼", code: "INP", desc: "你是腦洞大開的觀察家。外表軟萌，內心卻住著一個哲學家。你總是在思考一些沒人關心的有趣命題。" },
+        { title: "霸氣的獅子", emoji: "🦁", code: "ETJ", desc: "你是絕對的王者。野心與能力兼具，追求極致的效率與成功。你的字典裡從來沒有「退讓」這兩個字。" },
+        { title: "機靈的松鼠", emoji: "🐿️", code: "ESP", desc: "你是當下的享樂者。反應極快，充滿活力。哪裡有好玩的，哪裡就有你蹦跳的身影，你是快樂的化身。" },
+        { title: "溫柔的鹿", emoji: "🦌", code: "IFJ", desc: "你是情感的調解員。心思細膩，能輕易察覺他人的痛苦。你溫潤如玉，是這個混亂世界中的一股清流。" },
+        { title: "智慧的貓頭鷹", emoji: "🦉", code: "IST", desc: "你是孤獨的智者。冷靜、客觀，擅長從混亂中整理出邏輯。比起無意義的社交，你更喜歡默默觀察真相。" }
+    ];
+
+    let current = 0;
+    let scores = { E:0, I:0, S:0, N:0, T:0, F:0, J:0, P:0 };
+
+    function start() {
+        document.getElementById('home').classList.add('hidden');
+        document.getElementById('quiz').classList.remove('hidden');
+        showQuestion();
+    }
+
+    function showQuestion() {
+        const q = questions[current];
+        document.getElementById('question-text').innerText = q.q;
+        const optContainer = document.getElementById('options');
+        optContainer.innerHTML = '';
+
+        [ {text: q.a, type: q.type, weight: 1}, {text: q.b, type: getOpposite(q.type), weight: 1} ].forEach(opt => {
+            const b = document.createElement('button');
+            b.className = 'btn';
+            b.innerText = opt.text;
+            b.onclick = () => next(opt.type);
+            optContainer.appendChild(b);
+        });
+
+        document.getElementById('progress-inner').style.width = ((current + 1) / questions.length * 100) + "%";
+    }
+
+    function getOpposite(t) {
+        const map = { E:'I', I:'E', S:'N', N:'S', T:'F', F:'T', J:'P', P:'J' };
+        return map[t];
+    }
+
+    function next(t) {
+        scores[t]++;
+        current++;
+        if(current < questions.length) showQuestion();
+        else showResult();
+    }
+
+    function showResult() {
+        document.getElementById('quiz').classList.add('hidden');
+        document.getElementById('result').classList.remove('hidden');
+
+        // 改進邏輯：加入隨機打破平分的機制
+        const decide = (a, b) => {
+            if (scores[a] === scores[b]) return Math.random() > 0.5 ? a : b;
+            return scores[a] > scores[b] ? a : b;
+        };
+
+        let userCode = "";
+        userCode += decide('E', 'I');
+        userCode += decide('S', 'N');
+        userCode += decide('T', 'F');
+
+        // 匹配 12 種結果（如果剛好沒匹配到，隨機挑選最接近的一個）
+        let res = animalResults.find(r => r.code === userCode);
+        
+        if (!res) {
+            // 防呆機制：如果運算結果偏離 12 種，則隨機顯示增加多樣性
+            res = animalResults[Math.floor(Math.random() * animalResults.length)];
+        }
+
+        document.getElementById('res-emoji').innerText = res.emoji;
+        document.getElementById('res-title').innerText = res.title;
+        document.getElementById('res-desc').innerText = res.desc;
+    }
+</script>
+</body>
+</html>
